@@ -11,7 +11,7 @@ Use key 3 to randomize the values.
 
 # installation
 In maiden’s repl, enter:  
-norns.fetch("https://github.com/pangrus/automs70")
+`norns.fetch("https://github.com/pangrus/automs70")`
 
 
 
