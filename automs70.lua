@@ -1,7 +1,8 @@
 -- automs70
 -- Zoom MS-70 CDR
 -- automation system
---
+-- V1.0
+-- 
 -- K2 toggle value/destination
 -- E1 select
 -- E2/E3 change values
@@ -19,19 +20,24 @@ local maxValue
 local value
 local newValue
 
-local MS70CDR
 parameterEditEnable = {0xf0, 0x52, 0x00, 0x61, 0x50, 0xf7}
 parameterEdit = {0xf0, 0x52, 0x00, 0x61, 0x31, 1, 1, 0, 0, 0xf7}
 patchSelect = {0xc0, patch}
+
+-- MS-70 connect
+local MS70CDR = midi.connect(1)
 
 -- midi clock management
 local MIDI_Clock = require "beatclock"
 local clk = MIDI_Clock.new()
 local clk_midi = midi.connect(2)
 
+-- midi cc device
+local cc_device = midi.connect(3)
+
+
 function init()
-    -- device connect
-    MS70CDR = midi.connect(1)
+    -- enable MS-70 parameters editing
     MS70CDR:send(parameterEditEnable)
 
     -- reduce encoders sensitivity
@@ -56,7 +62,7 @@ function init()
 
     params:add_separator("controllers")
     for i = 1, knobsNumber do
-        params:add_group("controller "..i, 4)
+        params:add_group("controller "..i, 6)
 
         params:add {
             type = "number",
@@ -108,6 +114,27 @@ function init()
             action = function()
             end
         }
+        params:add {
+            type = "number",
+            id = "knob " .. i .. " Midi CC",
+            name = "knob " .. i .. " Midi CC",
+            min = 1,
+            max = 127,
+            default = 79 + i,
+            action = function()
+            end
+        }
+        params:add {
+            type = "number",
+            id = "knob " .. i .. " Midi Channel",
+            name = "knob " .. i .. " Midi Channel",
+            min = 1,
+            max = 127,
+            default = 1,
+            action = function()
+            end
+        }
+        
     end
     Init_knobs()
 end
@@ -175,6 +202,13 @@ function Automate()
             0xf7
         }
         MS70CDR:send(parameterEdit)
+        
+        -- MIDI control change        
+        local ccValue = knob[i].value
+        if ccValue > 127 then
+          ccValue = 127
+        end
+        cc_device:cc(params:get("knob " .. i .. " Midi CC"), ccValue, params:get("knob " .. i .. " Midi Channel"))
     end
     redraw()
 end
