@@ -9,6 +9,9 @@ The encoder 2 sets the minimum value and encoder 3 sets the maximum value that w
 Pressing key 2 you can select the effect and knob destination.  
 Use key 3 to randomize the values.  
 
+# installation
+In maiden’s repl, enter:
+norns.fetch("https://github.com/pangrus/automs70")
 
 
 
