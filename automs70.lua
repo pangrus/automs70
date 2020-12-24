@@ -2,7 +2,7 @@
 -- Zoom MS-70 CDR
 -- automation system
 -- V1.0
--- 
+--
 -- K2 toggle value/destination
 -- E1 select
 -- E2/E3 change values
@@ -134,7 +134,7 @@ function init()
             action = function()
             end
         }
-        
+
     end
     Init_knobs()
 end
@@ -202,11 +202,11 @@ function Automate()
             0xf7
         }
         MS70CDR:send(parameterEdit)
-        
-        -- MIDI control change        
+
+        -- MIDI control change
         local ccValue = knob[i].value
         if ccValue > 127 then
-          ccValue = 127
+            ccValue = 127
         end
         cc_device:cc(params:get("knob " .. i .. " Midi CC"), ccValue, params:get("knob " .. i .. " Midi Channel"))
     end
@@ -214,6 +214,7 @@ function Automate()
 end
 
 function external()
+    clk:reset()
 end
 
 function Randomize_knobs()
