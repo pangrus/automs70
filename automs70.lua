@@ -1,17 +1,19 @@
 -- automs70
--- Zoom MS-70 CDR
+--
+-- ZOOM MS-70 CDR
 -- automation system
--- V1.0
 --
 -- K2 toggle value/destination
 -- E1 select
 -- E2/E3 change values
 --
+-- V1.1
 -- @pangrus 2020
 
 -- variables
 local knob = {}
 local knobsNumber = 9
+local knobIndex = 1
 local selected = 1
 local shift = false
 local editMode = "range"
@@ -19,13 +21,12 @@ local minValue
 local maxValue
 local value
 local newValue
+local parameterEditEnable = {0xf0, 0x52, 0x00, 0x61, 0x50, 0xf7}
+local parameterEdit = {0xf0, 0x52, 0x00, 0x61, 0x31, 1, 1, 0, 0, 0xf7}
+local patchSelect = {0xc0, patch}
 
-parameterEditEnable = {0xf0, 0x52, 0x00, 0x61, 0x50, 0xf7}
-parameterEdit = {0xf0, 0x52, 0x00, 0x61, 0x31, 1, 1, 0, 0, 0xf7}
-patchSelect = {0xc0, patch}
-
--- MS-70 connect
-local MS70CDR = midi.connect(1)
+-- multistomp connect
+local MULTISTOMP = midi.connect(1)
 
 -- midi clock management
 local MIDI_Clock = require "beatclock"
@@ -35,10 +36,9 @@ local clk_midi = midi.connect(2)
 -- midi cc device
 local cc_device = midi.connect(3)
 
-
 function init()
     -- enable MS-70 parameters editing
-    MS70CDR:send(parameterEditEnable)
+    MULTISTOMP:send(parameterEditEnable)
 
     -- reduce encoders sensitivity
     norns.enc.sens(1, 3)
@@ -57,12 +57,32 @@ function init()
     clk:start()
 
     -- parameters
+    params:add_separator()
     params:add_separator("clock")
     clk:add_clock_params()
 
+    params:add_separator()
+    params:add_separator("MS type")
+    params:add_option("MS type", "MS type", {"MS-70 CDR", "MS-50G"}, 1)
+    params:set_action(
+        "MS type",
+        function(x)
+            if params:get("MS type") == 1 then
+                parameterEditEnable = {0xf0, 0x52, 0x00, 0x61, 0x50, 0xf7}
+                MULTISTOMP:send(parameterEditEnable)
+                print("MS-70 CDR editing enabled")
+            elseif params:get("MS type") == 2 then
+                parameterEditEnable = {0xf0, 0x52, 0x00, 0x58, 0x50, 0xf7}
+                MULTISTOMP:send(parameterEditEnable)
+                print("MS-50G editing enabled")
+            end
+        end
+    )
+
+    params:add_separator()
     params:add_separator("controllers")
     for i = 1, knobsNumber do
-        params:add_group("controller "..i, 6)
+        params:add_group("controller " .. i, 6)
 
         params:add {
             type = "number",
@@ -134,7 +154,6 @@ function init()
             action = function()
             end
         }
-
     end
     Init_knobs()
 end
@@ -171,45 +190,74 @@ function Init_knobs()
 end
 
 function Automate()
-    for i = 1, knobsNumber do
-        if
-            knob[i].value == knob[i].newValue or knob[i].value > params:get("knob " .. i .. " max") or
-            knob[i].value < params:get("knob " .. i .. " min")
-        then
-            knob[i].newValue =
-                math.floor(math.random(params:get("knob " .. i .. " max") - params:get("knob " .. i .. " min"))) +
-                params:get("knob " .. i .. " min") -
-                1
-        end
-        if knob[i].value > knob[i].newValue then
-            knob[i].value = knob[i].value - 1
-        end
-        if knob[i].value < knob[i].newValue then
-            knob[i].value = knob[i].value + 1
-        end
-        local parameterMSB = math.floor(knob[i].value / 128)
-        local parameterLSB = math.floor(knob[i].value - parameterMSB * 128)
+    if
+        knob[knobIndex].value == knob[knobIndex].newValue or
+            knob[knobIndex].value > params:get("knob " .. knobIndex .. " max") or
+            knob[knobIndex].value < params:get("knob " .. knobIndex .. " min")
+     then
+        knob[knobIndex].newValue =
+            math.floor(
+            math.random(params:get("knob " .. knobIndex .. " max") - params:get("knob " .. knobIndex .. " min"))
+        ) +
+            params:get("knob " .. knobIndex .. " min") -
+            1
+    end
+    if knob[knobIndex].value > knob[knobIndex].newValue then
+        knob[knobIndex].value = knob[knobIndex].value - 1
+    end
+    if knob[knobIndex].value < knob[knobIndex].newValue then
+        knob[knobIndex].value = knob[knobIndex].value + 1
+    end
+    local parameterMSB = math.floor(knob[knobIndex].value / 128)
+    local parameterLSB = math.floor(knob[knobIndex].value - parameterMSB * 128)
+
+    if params:get("MS type") == 1 then
         parameterEdit = {
             0xf0,
             0x52,
             0x00,
             0x61,
             0x31,
-            params:get("knob " .. i .. " effect") - 1,
-            params:get("knob " .. i .. " destination") + 1,
+            params:get("knob " .. knobIndex .. " effect") - 1,
+            params:get("knob " .. knobIndex .. " destination") + 1,
             parameterLSB,
             parameterMSB,
             0xf7
         }
-        MS70CDR:send(parameterEdit)
-
-        -- MIDI control change
-        local ccValue = knob[i].value
-        if ccValue > 127 then
-            ccValue = 127
-        end
-        cc_device:cc(params:get("knob " .. i .. " Midi CC"), ccValue, params:get("knob " .. i .. " Midi Channel"))
+    elseif params:get("MS type") == 2 then
+        parameterEdit = {
+            0xf0,
+            0x52,
+            0x00,
+            0x58,
+            0x31,
+            params:get("knob " .. knobIndex .. " effect") - 1,
+            params:get("knob " .. knobIndex .. " destination") + 1,
+            parameterLSB,
+            parameterMSB,
+            0xf7
+        }
     end
+
+    -- send edit command to MS multieffect
+    MULTISTOMP:send(parameterEdit)
+
+    -- MIDI control change
+    local ccValue = knob[knobIndex].value
+    if ccValue > 127 then
+        ccValue = 127
+    end
+    cc_device:cc(
+        params:get("knob " .. knobIndex .. " Midi CC"),
+        ccValue,
+        params:get("knob " .. knobIndex .. " Midi Channel")
+    )
+
+    knobIndex = knobIndex + 1
+    if knobIndex > knobsNumber then
+        knobIndex = 1
+    end
+
     redraw()
 end
 
