@@ -7,7 +7,7 @@
 -- E1 select
 -- E2/E3 change values
 --
--- V1.1
+-- V1.2
 -- @pangrus 2020
 
 -- variables
@@ -119,8 +119,8 @@ function init()
             id = "knob " .. i .. " effect",
             name = "knob " .. i .. " effect",
             min = 1,
-            max = 5,
-            default = 0,
+            max = 3,
+            default = 1,
             action = function()
             end
         }
@@ -130,7 +130,7 @@ function init()
             name = "knob " .. i .. " destination",
             min = 1,
             max = 9,
-            default = 0,
+            default = 1,
             action = function()
             end
         }
