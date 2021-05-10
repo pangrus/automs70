@@ -1,5 +1,5 @@
 # automs70
-Automate up to nine paramters of the ZOOM MS-70 CDR multi effect.
+Automate up to nine parameters of the ZOOM MS-70 CDR multi effect.
 
 ![automs70](automs70.png)
 
