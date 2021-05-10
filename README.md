@@ -10,10 +10,6 @@ Pressing key 2 you can select the effect and knob destination.
 Use key 3 to randomize the values.  
 Automs70 can also be used to generate nine MIDI control change commands: define in the norns parameters menu the destination CC number and relative midi channel. 
 
-# installation
-In maiden’s repl, enter:  
-`norns.fetch("https://github.com/pangrus/automs70")`
-
 
 
 
