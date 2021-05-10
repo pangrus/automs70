@@ -1,5 +1,5 @@
 # automs70
-This is a monome norns script to automate up to nine parameters of the ZOOM MS-70 CDR multi effect.
+This is a [monome norns](https://monome.org/norns/) script  to automate up to nine parameters of the ZOOM MS-70 CDR multi effect.
 
 ![automs70](automs70.png)
 
